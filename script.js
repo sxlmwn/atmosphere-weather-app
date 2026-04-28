@@ -31,33 +31,55 @@ const feelsLikeValueEl = document.getElementById('feels-like-value');
 // Map variables
 const windyMap = document.getElementById('windy-map');
 
-// Weather Code Mapping & Ultra-Reliable Pexels Backgrounds
-const weatherCodes = {
-    0: { desc: 'Clear', icon: 'fa-sun', color: ['#fbbf24', '#f59e0b'], bg: 'https://images.pexels.com/photos/281260/pexels-photo-281260.jpeg?auto=compress&cs=tinysrgb&w=1920', bgNight: 'https://images.pexels.com/photos/1624496/pexels-photo-1624496.jpeg?auto=compress&cs=tinysrgb&w=1920', type: 'clear' },
-    1: { desc: 'Mostly Clear', icon: 'fa-cloud-sun', color: ['#fbbf24', '#f59e0b'], bg: 'https://images.pexels.com/photos/281260/pexels-photo-281260.jpeg?auto=compress&cs=tinysrgb&w=1920', bgNight: 'https://images.pexels.com/photos/1624496/pexels-photo-1624496.jpeg?auto=compress&cs=tinysrgb&w=1920', type: 'clear' },
-    2: { desc: 'Partly Cloudy', icon: 'fa-cloud-sun', color: ['#fcd34d', '#94a3b8'], bg: 'https://images.pexels.com/photos/158163/clouds-cloudporn-weather-lookup-158163.jpeg?auto=compress&cs=tinysrgb&w=1920', type: 'cloud' },
-    3: { desc: 'Cloudy', icon: 'fa-cloud', color: ['#94a3b8', '#64748b'], bg: 'https://images.pexels.com/photos/158163/clouds-cloudporn-weather-lookup-158163.jpeg?auto=compress&cs=tinysrgb&w=1920', type: 'cloud' },
-    45: { desc: 'Fog', icon: 'fa-smog', color: ['#cbd5e1', '#94a3b8'], bg: 'https://images.pexels.com/photos/167699/pexels-photo-167699.jpeg?auto=compress&cs=tinysrgb&w=1920', type: 'cloud' },
-    48: { desc: 'Freezing Fog', icon: 'fa-smog', color: ['#cbd5e1', '#94a3b8'], bg: 'https://images.pexels.com/photos/167699/pexels-photo-167699.jpeg?auto=compress&cs=tinysrgb&w=1920', type: 'cloud' },
-    51: { desc: 'Light Drizzle', icon: 'fa-cloud-rain', color: ['#93c5fd', '#3b82f6'], bg: 'https://images.pexels.com/photos/1529360/pexels-photo-1529360.jpeg?auto=compress&cs=tinysrgb&w=1920', type: 'rain' },
-    53: { desc: 'Drizzle', icon: 'fa-cloud-rain', color: ['#93c5fd', '#3b82f6'], bg: 'https://images.pexels.com/photos/1529360/pexels-photo-1529360.jpeg?auto=compress&cs=tinysrgb&w=1920', type: 'rain' },
-    55: { desc: 'Heavy Drizzle', icon: 'fa-cloud-rain', color: ['#60a5fa', '#2563eb'], bg: 'https://images.pexels.com/photos/1529360/pexels-photo-1529360.jpeg?auto=compress&cs=tinysrgb&w=1920', type: 'rain' },
-    61: { desc: 'Light Rain', icon: 'fa-cloud-showers-heavy', color: ['#60a5fa', '#3b82f6'], bg: 'https://images.pexels.com/photos/1529360/pexels-photo-1529360.jpeg?auto=compress&cs=tinysrgb&w=1920', type: 'rain' },
-    63: { desc: 'Rain', icon: 'fa-cloud-showers-heavy', color: ['#3b82f6', '#2563eb'], bg: 'https://images.pexels.com/photos/1529360/pexels-photo-1529360.jpeg?auto=compress&cs=tinysrgb&w=1920', type: 'rain' },
-    65: { desc: 'Heavy Rain', icon: 'fa-cloud-showers-heavy', color: ['#2563eb', '#1d4ed8'], bg: 'https://images.pexels.com/photos/1529360/pexels-photo-1529360.jpeg?auto=compress&cs=tinysrgb&w=1920', type: 'rain' },
-    71: { desc: 'Light Snow', icon: 'fa-snowflake', color: ['#e2e8f0', '#cbd5e1'], bg: 'https://images.pexels.com/photos/158028/benni-marmot-snow-fall-158028.jpeg?auto=compress&cs=tinysrgb&w=1920', type: 'snow' },
-    73: { desc: 'Snow', icon: 'fa-snowflake', color: ['#f1f5f9', '#e2e8f0'], bg: 'https://images.pexels.com/photos/158028/benni-marmot-snow-fall-158028.jpeg?auto=compress&cs=tinysrgb&w=1920', type: 'snow' },
-    75: { desc: 'Heavy Snow', icon: 'fa-snowflake', color: ['#ffffff', '#f1f5f9'], bg: 'https://images.pexels.com/photos/158028/benni-marmot-snow-fall-158028.jpeg?auto=compress&cs=tinysrgb&w=1920', type: 'snow' },
-    77: { desc: 'Snow Grains', icon: 'fa-snowflake', color: ['#e2e8f0', '#cbd5e1'], bg: 'https://images.pexels.com/photos/158028/benni-marmot-snow-fall-158028.jpeg?auto=compress&cs=tinysrgb&w=1920', type: 'snow' },
-    80: { desc: 'Light Showers', icon: 'fa-cloud-showers-water', color: ['#60a5fa', '#3b82f6'], bg: 'https://images.pexels.com/photos/1529360/pexels-photo-1529360.jpeg?auto=compress&cs=tinysrgb&w=1920', type: 'rain' },
-    81: { desc: 'Showers', icon: 'fa-cloud-showers-water', color: ['#3b82f6', '#2563eb'], bg: 'https://images.pexels.com/photos/1529360/pexels-photo-1529360.jpeg?auto=compress&cs=tinysrgb&w=1920', type: 'rain' },
-    82: { desc: 'Heavy Showers', icon: 'fa-cloud-showers-water', color: ['#2563eb', '#1e40af'], bg: 'https://images.pexels.com/photos/1529360/pexels-photo-1529360.jpeg?auto=compress&cs=tinysrgb&w=1920', type: 'rain' },
-    95: { desc: 'Thunderstorm', icon: 'fa-bolt', color: ['#c084fc', '#9333ea'], bg: 'https://images.pexels.com/photos/1118869/pexels-photo-1118869.jpeg?auto=compress&cs=tinysrgb&w=1920', type: 'storm' },
-    96: { desc: 'Storm & Hail', icon: 'fa-bolt', color: ['#d8b4fe', '#a855f7'], bg: 'https://images.pexels.com/photos/1118869/pexels-photo-1118869.jpeg?auto=compress&cs=tinysrgb&w=1920', type: 'storm' },
-    99: { desc: 'Heavy Storm', icon: 'fa-bolt', color: ['#e9d5ff', '#c084fc'], bg: 'https://images.pexels.com/photos/1118869/pexels-photo-1118869.jpeg?auto=compress&cs=tinysrgb&w=1920', type: 'storm' },
+// Weather Code Mapping & Ultra-Reliable Unsplash Backgrounds
+const unsplashBase = 'https://images.unsplash.com/photo-';
+const unsplashParams = '?q=80&w=1920&auto=format&fit=crop';
+
+const bgMap = {
+    clearDay: unsplashBase + '1601297183305-6df142704ea2' + unsplashParams, // Bright blue sunny sky
+    clearNight: unsplashBase + '1531306728370-e2ebd9d7bb99' + unsplashParams, // Starry night
+    partlyCloudyDay: unsplashBase + '1464822759023-fed622ff2c3b' + unsplashParams, // Sun and fluffy clouds
+    partlyCloudyNight: unsplashBase + '1499951360447-b19be8fe80f5' + unsplashParams, // Moon and clouds
+    cloudy: unsplashBase + '1534088568595-a066f410cbda' + unsplashParams, // Moody overcast
+    fog: unsplashBase + '1485236715568-ddc5ee6ca227' + unsplashParams, // Thick fog
+    smog: unsplashBase + '1520114002246-17b5f106d71b' + unsplashParams, // City smog/haze
+    drizzle: unsplashBase + '1543997387-548dddb582d1' + unsplashParams, // Tip-tip light rain on glass
+    rain: unsplashBase + '1515694346937-94d85e41e6f0' + unsplashParams, // Steady rain
+    heavyRain: unsplashBase + '1519692933481-e162a57d6721' + unsplashParams, // Torrential heavy rain
+    showers: unsplashBase + '1504700610630-ebcba646bb4c' + unsplashParams, // Rain with sun/rainbow
+    snow: unsplashBase + '1491002052546-bf38f186af56' + unsplashParams, // Gentle snow
+    snowStorm: unsplashBase + '1516466723225-926f1a8eec37' + unsplashParams, // Heavy snow storm / blizzard
+    thunderstorm: unsplashBase + '1605727216801-e27ce1d0ce3c' + unsplashParams, // Epic lightning
+    hail: unsplashBase + '1523772721911-ce1d64380b06' + unsplashParams, // Hail / severe ice storm
+    tornado: unsplashBase + '1527482837616-98e94a4ae948' + unsplashParams // Dark ominous supercell / tornado
 };
 
-const defaultWeather = { desc: 'Unknown', icon: 'fa-cloud', color: ['#94a3b8', '#64748b'], bg: 'https://images.pexels.com/photos/158163/clouds-cloudporn-weather-lookup-158163.jpeg?auto=compress&cs=tinysrgb&w=1920', type: 'cloud' };
+const weatherCodes = {
+    0: { desc: 'Sunny', icon: 'fa-sun', color: ['#fbbf24', '#f59e0b'], bg: bgMap.clearDay, bgNight: bgMap.clearNight, type: 'clear' },
+    1: { desc: 'Mostly Sunny', icon: 'fa-cloud-sun', color: ['#fbbf24', '#f59e0b'], bg: bgMap.clearDay, bgNight: bgMap.clearNight, type: 'clear' },
+    2: { desc: 'Partly Cloudy', icon: 'fa-cloud-sun', color: ['#fcd34d', '#94a3b8'], bg: bgMap.partlyCloudyDay, bgNight: bgMap.partlyCloudyNight, type: 'cloud' },
+    3: { desc: 'Cloudy', icon: 'fa-cloud', color: ['#94a3b8', '#64748b'], bg: bgMap.cloudy, type: 'cloud' },
+    45: { desc: 'Fog', icon: 'fa-smog', color: ['#cbd5e1', '#94a3b8'], bg: bgMap.fog, type: 'cloud' },
+    48: { desc: 'Smog / Rime Fog', icon: 'fa-smog', color: ['#94a3b8', '#64748b'], bg: bgMap.smog, type: 'cloud' },
+    51: { desc: 'Tip-Tip Rain (Light)', icon: 'fa-cloud-rain', color: ['#93c5fd', '#3b82f6'], bg: bgMap.drizzle, type: 'rain' },
+    53: { desc: 'Drizzle', icon: 'fa-cloud-rain', color: ['#93c5fd', '#3b82f6'], bg: bgMap.drizzle, type: 'rain' },
+    55: { desc: 'Heavy Drizzle', icon: 'fa-cloud-rain', color: ['#60a5fa', '#2563eb'], bg: bgMap.heavyRain, type: 'rain' },
+    61: { desc: 'Slight Rain', icon: 'fa-cloud-showers-heavy', color: ['#60a5fa', '#3b82f6'], bg: bgMap.rain, type: 'rain' },
+    63: { desc: 'Rain', icon: 'fa-cloud-showers-heavy', color: ['#3b82f6', '#2563eb'], bg: bgMap.rain, type: 'rain' },
+    65: { desc: 'Heavy Rain', icon: 'fa-cloud-showers-heavy', color: ['#2563eb', '#1d4ed8'], bg: bgMap.heavyRain, type: 'rain' },
+    71: { desc: 'Light Snow', icon: 'fa-snowflake', color: ['#e2e8f0', '#cbd5e1'], bg: bgMap.snow, type: 'snow' },
+    73: { desc: 'Snow', icon: 'fa-snowflake', color: ['#f1f5f9', '#e2e8f0'], bg: bgMap.snow, type: 'snow' },
+    75: { desc: 'Snow Storm', icon: 'fa-snowflake', color: ['#ffffff', '#cbd5e1'], bg: bgMap.snowStorm, type: 'snow' },
+    77: { desc: 'Snow Grains', icon: 'fa-snowflake', color: ['#e2e8f0', '#cbd5e1'], bg: bgMap.snow, type: 'snow' },
+    80: { desc: 'Rain with Sun', icon: 'fa-cloud-showers-water', color: ['#60a5fa', '#3b82f6'], bg: bgMap.showers, type: 'rain' },
+    81: { desc: 'Showers', icon: 'fa-cloud-showers-water', color: ['#3b82f6', '#2563eb'], bg: bgMap.showers, type: 'rain' },
+    82: { desc: 'Heavy Showers', icon: 'fa-cloud-showers-water', color: ['#2563eb', '#1e40af'], bg: bgMap.heavyRain, type: 'rain' },
+    95: { desc: 'Thunderstorm', icon: 'fa-bolt', color: ['#c084fc', '#9333ea'], bg: bgMap.thunderstorm, type: 'storm' },
+    96: { desc: 'Hail Storm', icon: 'fa-bolt', color: ['#d8b4fe', '#a855f7'], bg: bgMap.hail, type: 'storm' },
+    99: { desc: 'Tornado / Severe Storm', icon: 'fa-bolt', color: ['#e9d5ff', '#c084fc'], bg: bgMap.tornado, type: 'storm' },
+};
+
+const defaultWeather = { desc: 'Unknown', icon: 'fa-cloud', color: ['#94a3b8', '#64748b'], bg: bgMap.cloudy, type: 'cloud' };
 
 let currentWeatherData = null;
 
