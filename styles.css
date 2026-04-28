@@ -1,11 +1,11 @@
 :root {
     /* iOS 26 Fluid Glass Design System */
-    --glass-bg: rgba(20, 20, 25, 0.4);
-    --glass-bg-hover: rgba(40, 40, 50, 0.5);
-    --glass-border: rgba(255, 255, 255, 0.15);
+    --glass-bg: rgba(10, 10, 15, 0.25);
+    --glass-bg-hover: rgba(30, 30, 40, 0.35);
+    --glass-border: rgba(255, 255, 255, 0.1);
     --glass-border-light: rgba(255, 255, 255, 0.25);
-    --glass-shadow: 0 24px 64px 0 rgba(0, 0, 0, 0.5);
-    --glass-blur: blur(40px) saturate(150%);
+    --glass-shadow: 0 32px 64px 0 rgba(0, 0, 0, 0.6);
+    --glass-blur: blur(48px) saturate(200%);
     
     /* Typography */
     --text-primary: #ffffff;
@@ -145,7 +145,7 @@ body {
     border-top: 1px solid var(--glass-border-light);
     border-left: 1px solid var(--glass-border-light);
     border-radius: var(--radius-app);
-    box-shadow: var(--glass-shadow);
+    box-shadow: inset 0 1px 1px rgba(255, 255, 255, 0.15), inset 0 0 40px rgba(255, 255, 255, 0.05), var(--glass-shadow);
     padding: 32px 24px;
     position: relative;
     min-height: 850px; /* Taller for the two forecast sections */
@@ -169,10 +169,12 @@ body {
 .search-container {
     display: flex;
     align-items: center;
-    background: rgba(0, 0, 0, 0.3);
+    background: rgba(255, 255, 255, 0.08);
     border-radius: 100px;
     padding: 8px 12px 8px 20px;
     border: 1px solid rgba(255, 255, 255, 0.1);
+    border-top: 1px solid rgba(255, 255, 255, 0.2);
+    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.1), 0 4px 12px rgba(0, 0, 0, 0.1);
     transition: var(--spring-fast);
 }
 
@@ -368,8 +370,10 @@ body {
 }
 
 .detail-card {
-    background: rgba(0, 0, 0, 0.3);
+    background: rgba(255, 255, 255, 0.05);
     border: 1px solid rgba(255, 255, 255, 0.1);
+    border-top: 1px solid rgba(255, 255, 255, 0.2);
+    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.1), 0 8px 24px rgba(0, 0, 0, 0.2);
     border-radius: var(--radius-card);
     padding: 16px 10px;
     display: flex;
@@ -426,8 +430,10 @@ body {
 
 /* Forecast Sections */
 .forecast-section {
-    background: rgba(0, 0, 0, 0.2);
+    background: rgba(255, 255, 255, 0.05);
     border: 1px solid rgba(255, 255, 255, 0.1);
+    border-top: 1px solid rgba(255, 255, 255, 0.2);
+    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.1), 0 8px 24px rgba(0, 0, 0, 0.2);
     border-radius: var(--radius-card);
     padding: 16px 20px;
     margin-top: auto;
@@ -479,7 +485,9 @@ body {
 
 .forecast-item.active {
     background: rgba(255, 255, 255, 0.15);
-    border: 1px solid rgba(255, 255, 255, 0.3);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    border-top: 1px solid rgba(255, 255, 255, 0.4);
+    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.1), 0 4px 12px rgba(0, 0, 0, 0.2);
 }
 
 .forecast-time, .forecast-day {
@@ -540,8 +548,9 @@ body {
     backdrop-filter: var(--glass-blur);
     -webkit-backdrop-filter: var(--glass-blur);
     border: 1px solid var(--glass-border);
+    border-top: 1px solid var(--glass-border-light);
     border-radius: var(--radius-app);
-    box-shadow: 0 40px 80px rgba(0,0,0,0.5);
+    box-shadow: inset 0 1px 1px rgba(255, 255, 255, 0.15), inset 0 0 40px rgba(255, 255, 255, 0.05), 0 40px 80px rgba(0,0,0,0.5);
     width: 90%;
     max-width: 360px;
     padding: 30px;
