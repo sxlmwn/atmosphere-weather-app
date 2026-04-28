@@ -1,0 +1,145 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Atmosphere | Weather</title>
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <!-- Font Awesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <!-- Cinematic Zoom Background -->
+    <div id="ken-burns-bg" class="ken-burns-bg"></div>
+    
+    <!-- Weather Particle Animations (Rain/Snow/Stars) -->
+    <div id="weather-animations" class="weather-animations"></div>
+
+    <div class="background-overlay"></div>
+
+    <div class="app-container">
+        <header class="header">
+            <div class="search-wrapper">
+                <div class="search-container">
+                    <i class="fas fa-search search-icon"></i>
+                    <input type="text" id="city-input" placeholder="Search city or airport..." autocomplete="off">
+                    <button id="search-btn" class="search-btn" aria-label="Search">
+                        <i class="fas fa-arrow-right"></i>
+                    </button>
+                </div>
+                <ul id="suggestions-list" class="suggestions-list hidden">
+                    <!-- Suggestions -->
+                </ul>
+            </div>
+            <div id="error-message" class="error-message hidden">Location not found. Please try again.</div>
+        </header>
+
+        <main class="weather-content hidden" id="weather-content">
+            <div class="current-weather">
+                <div class="location-header">
+                    <h1 id="city-name">London</h1>
+                    <p id="current-date">Monday, 28 April</p>
+                </div>
+                
+                <div class="weather-main">
+                    <div class="weather-icon-container">
+                        <i id="weather-icon" class="fas fa-cloud-sun weather-icon-large"></i>
+                    </div>
+                    <div class="temperature">
+                        <span id="temp-value">22</span><span class="temp-unit">°</span>
+                    </div>
+                    <p id="weather-description" class="weather-desc">Partly Cloudy</p>
+                </div>
+
+                <div class="weather-details">
+                    <div class="detail-card interactive" id="card-humidity" data-type="humidity" tabindex="0" role="button">
+                        <div class="detail-icon-wrapper">
+                            <i class="fas fa-droplet"></i>
+                        </div>
+                        <div class="detail-info">
+                            <span class="detail-label">Humidity</span>
+                            <span id="humidity-value" class="detail-value">45%</span>
+                        </div>
+                    </div>
+                    <div class="detail-card interactive" id="card-wind" data-type="wind" tabindex="0" role="button">
+                        <div class="detail-icon-wrapper">
+                            <i class="fas fa-wind"></i>
+                        </div>
+                        <div class="detail-info">
+                            <span class="detail-label">Wind</span>
+                            <span id="wind-value" class="detail-value">12 km/h</span>
+                        </div>
+                    </div>
+                    <div class="detail-card interactive" id="card-feels" data-type="feels" tabindex="0" role="button">
+                        <div class="detail-icon-wrapper">
+                            <i class="fas fa-temperature-half"></i>
+                        </div>
+                        <div class="detail-info">
+                            <span class="detail-label">Feels Like</span>
+                            <span id="feels-like-value" class="detail-value">24°</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Hourly Forecast Section -->
+                <div class="forecast-section" style="margin-bottom: 16px;">
+                    <h3 class="forecast-title">Today</h3>
+                    <div class="forecast-container" id="hourly-forecast-container">
+                        <!-- Hourly items injected via JS -->
+                    </div>
+                </div>
+
+                <!-- 7 Day Forecast Section -->
+                <div class="forecast-section">
+                    <h3 class="forecast-title">7-Day Forecast</h3>
+                    <div class="forecast-container" id="forecast-container">
+                        <!-- Forecast items injected via JS -->
+                    </div>
+                </div>
+
+                <!-- Interactive Radar Map Section -->
+                <div class="forecast-section" style="margin-top: 16px; padding: 0; overflow: hidden; border-radius: var(--radius-card);">
+                    <h3 class="forecast-title" style="padding: 16px 20px 0 20px;">Live Weather Radar</h3>
+                    <iframe id="windy-map" width="100%" height="280" style="border:none; margin-top: 10px;" src="about:blank"></iframe>
+                </div>
+            </div>
+        </main>
+        
+        <!-- Loading State -->
+        <div id="loading-spinner" class="loading-spinner hidden">
+            <div class="spinner"></div>
+        </div>
+
+        <!-- Initial State -->
+        <div id="initial-state" class="initial-state">
+            <div class="magical-icon-wrapper">
+                <i class="fas fa-globe splash-icon"></i>
+            </div>
+            <h2>Atmosphere</h2>
+            <p>Type a city name to see the magic.</p>
+        </div>
+    </div>
+    
+    <!-- Detail Modal -->
+    <div class="modal-overlay hidden" id="modal-overlay">
+        <div class="modal" id="detail-modal">
+            <button class="modal-close" id="modal-close" aria-label="Close modal"><i class="fas fa-xmark"></i></button>
+            <div class="modal-header">
+                <div class="modal-icon-wrapper">
+                    <i id="modal-icon" class="fas fa-wind"></i>
+                </div>
+                <h3 id="modal-title">Wind Details</h3>
+            </div>
+            <div class="modal-body" id="modal-body">
+                <!-- Modal content injected via JS -->
+            </div>
+        </div>
+    </div>
+
+    <script src="script.js"></script>
+</body>
+</html>
