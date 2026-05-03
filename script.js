@@ -358,17 +358,9 @@ function updateUI(cityName, current, hourly, daily, lat, lon) {
     renderHourlyForecast(hourly, startIndex, 'Today', 0);
     renderForecast(daily, hourly);
     
-    // Setup Interactive Map using Windy iframe embed
-    const zoomLevel = 5;
-    const metricTemp = currentUnit === 'C' ? 'c' : 'f';
-    const metricWind = currentUnit === 'C' ? 'km/h' : 'mph';
-    const metricRain = currentUnit === 'C' ? 'mm' : 'in';
-    const windySrc = `https://embed.windy.com/embed.html?type=map&location=coordinates&metricRain=${metricRain}&metricTemp=${metricTemp}&metricWind=${metricWind}&zoom=${zoomLevel}&overlay=clouds&product=ecmwf&level=surface&lat=${lat}&lon=${lon}`;
-    
-    mapLoading.classList.remove('hidden');
-    windyMap.onload = () => { mapLoading.classList.add('hidden'); };
-    windyMap.onerror = () => { mapLoading.innerHTML = '<span>Map failed to load.</span>'; };
-    windyMap.src = windySrc;
+    // Setup Lazy Loading for Windy map
+    mapLoaded = false;
+    initLazyMapLoading();
 }
 
 function renderHourlyForecast(hourly, startIndex, titleText, dayIndex) {
@@ -576,6 +568,41 @@ function renderLiveBackground(type, isDay, code) {
     }
 }
 
+
+// Lazy load Windy map when visible
+let mapLoaded = false;
+function initLazyMapLoading() {
+    if (!windyMap || mapLoaded) return;
+    
+    const mapSection = windyMap.closest('.map-section');
+    if (!mapSection) return;
+    
+    const observer = new IntersectionObserver((entries) => {
+        entries.forEach(entry => {
+            if (entry.isIntersecting && !mapLoaded) {
+                loadWindyMap();
+                observer.unobserve(entry.target);
+            }
+        });
+    }, { threshold: 0.1 });
+    
+    observer.observe(mapSection);
+}
+
+function loadWindyMap() {
+    mapLoaded = true;
+    const zoomLevel = 5;
+    const metricTemp = currentUnit === 'C' ? 'c' : 'f';
+    const metricWind = currentUnit === 'C' ? 'km/h' : 'mph';
+    const metricRain = currentUnit === 'C' ? 'mm' : 'in';
+    const windySrc = `https://embed.windy.com/embed.html?type=map&location=coordinates&metricRain=${metricRain}&metricTemp=${metricTemp}&metricWind=${metricWind}&zoom=${zoomLevel}&overlay=clouds&product=ecmwf&level=surface&lat=${currentLat}&lon=${currentLon}`;
+    
+    mapLoading.classList.remove('hidden');
+    windyMap.onload = () => { mapLoading.classList.add('hidden'); };
+    windyMap.onerror = () => { mapLoading.innerHTML = '<span>Map failed to load.</span>'; };
+    windyMap.src = windySrc;
+}
+
 // Modal Logic
 function openModal(type) {
     if (!currentWeatherData) return;
@@ -614,7 +641,7 @@ function openModal(type) {
     } else if (type === 'feels') {
         modalIcon.className = 'fas fa-temperature-half';
         modalTitle.textContent = 'Atmosphere';
-        modalBody.innerHTML = `
+        let atmosphereHTML = `
             <div class="modal-detail-row">
                 <span class="modal-label">Apparent Temp</span>
                 <span class="modal-value">${currentWeatherData.apparent_temperature}°${currentUnit}</span>
@@ -624,16 +651,34 @@ function openModal(type) {
                 <span class="modal-value">${currentWeatherData.surface_pressure} hPa</span>
             </div>
         `;
+        // Add AQI if available
+        if (currentAQIData && currentAQIData.current) {
+            const aqi = currentAQIData.current.us_aqi;
+            const aqiCat = getAQICategory(aqi);
+            atmosphereHTML += `
+                <div class="modal-detail-row">
+                    <span class="modal-label">Air Quality (US AQI)</span>
+                    <span class="modal-value" style="color: ${aqiCat.color}">${Math.round(aqi)} - ${aqiCat.label}</span>
+                </div>
+            `;
+        }
+        modalBody.innerHTML = atmosphereHTML;
     }
 
     modalOverlay.classList.remove('hidden');
 }
 
-detailCards.forEach(card => {
-    card.addEventListener('click', () => openModal(card.dataset.type));
-    card.addEventListener('keypress', (e) => {
-        if (e.key === 'Enter') openModal(card.dataset.type);
-    });
+// Event delegation for detail cards - better performance
+document.addEventListener('click', (e) => {
+    const card = e.target.closest('.detail-card.interactive');
+    if (card) openModal(card.dataset.type);
+});
+
+document.addEventListener('keypress', (e) => {
+    if (e.key === 'Enter') {
+        const card = e.target.closest('.detail-card.interactive');
+        if (card) openModal(card.dataset.type);
+    }
 });
 
 function closeModal() {
