@@ -3,7 +3,10 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Atmosphere | Weather</title>
+    <meta name="description" content="Atmosphere — an immersive weather app with live animated skies, fluid glass UI, and real-time forecasts for any city worldwide.">
+    <title>Atmosphere | Premium Weather</title>
+    <!-- Emoji Favicon -->
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🌤</text></svg>">
     <!-- Google Fonts -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -13,27 +16,40 @@
     <link rel="stylesheet" href="styles.css">
 </head>
 <body>
-    <!-- Cinematic Zoom Background -->
-    <div id="ken-burns-bg" class="ken-burns-bg"></div>
-    
+    <!-- Animated Sky Gradient Background -->
+    <div id="sky-bg" class="sky-bg"></div>
+
+    <!-- Live Cloud Layer -->
+    <div id="cloud-layer" class="cloud-layer"></div>
+
     <!-- Weather Particle Animations (Rain/Snow/Stars) -->
     <div id="weather-animations" class="weather-animations"></div>
 
+    <!-- Lightning Flash Overlay -->
+    <div id="lightning-flash" class="lightning-flash"></div>
+
+    <!-- Frosted overlay for glass contrast -->
     <div class="background-overlay"></div>
 
     <div class="app-container">
         <header class="header">
-            <div class="search-wrapper">
-                <div class="search-container">
-                    <i class="fas fa-search search-icon"></i>
-                    <input type="text" id="city-input" placeholder="Search city or airport..." autocomplete="off">
-                    <button id="search-btn" class="search-btn" aria-label="Search">
-                        <i class="fas fa-arrow-right"></i>
-                    </button>
+            <div class="header-row">
+                <div class="search-wrapper">
+                    <div class="search-container">
+                        <i class="fas fa-search search-icon"></i>
+                        <input type="text" id="city-input" placeholder="Search city..." autocomplete="off">
+                        <button id="gps-btn" class="header-icon-btn" aria-label="Use my location" title="Use my location">
+                            <i class="fas fa-location-crosshairs"></i>
+                        </button>
+                        <button id="search-btn" class="header-icon-btn" aria-label="Search">
+                            <i class="fas fa-arrow-right"></i>
+                        </button>
+                    </div>
+                    <ul id="suggestions-list" class="suggestions-list hidden">
+                        <!-- Suggestions injected via JS -->
+                    </ul>
                 </div>
-                <ul id="suggestions-list" class="suggestions-list hidden">
-                    <!-- Suggestions -->
-                </ul>
+                <button id="unit-toggle" class="unit-toggle" aria-label="Toggle temperature unit">°C</button>
             </div>
             <div id="error-message" class="error-message hidden">Location not found. Please try again.</div>
         </header>
@@ -44,7 +60,7 @@
                     <h1 id="city-name">London</h1>
                     <p id="current-date">Monday, 28 April</p>
                 </div>
-                
+
                 <div class="weather-main">
                     <div class="weather-icon-container">
                         <i id="weather-icon" class="fas fa-cloud-sun weather-icon-large"></i>
@@ -85,33 +101,45 @@
                     </div>
                 </div>
 
-                <!-- Hourly Forecast Section -->
-                <div class="forecast-section" style="margin-bottom: 16px;">
-                    <h3 class="forecast-title">Today</h3>
-                    <div class="forecast-container" id="hourly-forecast-container">
-                        <!-- Hourly items injected via JS -->
-                    </div>
+                <!-- Hourly Forecast -->
+                <div class="forecast-section hourly-section">
+                    <h3 class="forecast-title" id="hourly-title">Today</h3>
+                    <div class="forecast-container" id="hourly-forecast-container"></div>
                 </div>
 
-                <!-- 7 Day Forecast Section -->
-                <div class="forecast-section">
+                <!-- 7-Day Forecast -->
+                <div class="forecast-section daily-section">
                     <h3 class="forecast-title">7-Day Forecast</h3>
-                    <div class="forecast-container" id="forecast-container">
-                        <!-- Forecast items injected via JS -->
-                    </div>
+                    <div class="forecast-container" id="forecast-container"></div>
                 </div>
 
-                <!-- Interactive Radar Map Section -->
-                <div class="forecast-section" style="margin-top: 16px; padding: 0; overflow: hidden; border-radius: var(--radius-card);">
-                    <h3 class="forecast-title" style="padding: 16px 20px 0 20px;">Live Weather Radar</h3>
-                    <iframe id="windy-map" width="100%" height="280" style="border:none; margin-top: 10px;" src="about:blank"></iframe>
+                <!-- Live Radar Map -->
+                <div class="forecast-section map-section">
+                    <h3 class="forecast-title">Live Weather Radar</h3>
+                    <div class="map-wrapper">
+                        <div id="map-loading" class="map-loading">
+                            <div class="spinner small"></div>
+                            <span>Loading radar...</span>
+                        </div>
+                        <iframe id="windy-map" width="100%" height="280" src="about:blank" title="Live weather radar map"></iframe>
+                    </div>
                 </div>
             </div>
         </main>
-        
-        <!-- Loading State -->
-        <div id="loading-spinner" class="loading-spinner hidden">
-            <div class="spinner"></div>
+
+        <!-- Loading Skeleton -->
+        <div id="loading-skeleton" class="loading-skeleton hidden">
+            <div class="skeleton-block skeleton-city"></div>
+            <div class="skeleton-block skeleton-date"></div>
+            <div class="skeleton-block skeleton-icon-block"></div>
+            <div class="skeleton-block skeleton-temp-block"></div>
+            <div class="skeleton-block skeleton-desc"></div>
+            <div class="skeleton-row">
+                <div class="skeleton-block skeleton-card"></div>
+                <div class="skeleton-block skeleton-card"></div>
+                <div class="skeleton-block skeleton-card"></div>
+            </div>
+            <div class="skeleton-block skeleton-forecast-block"></div>
         </div>
 
         <!-- Initial State -->
@@ -123,7 +151,7 @@
             <p>Type a city name to see the magic.</p>
         </div>
     </div>
-    
+
     <!-- Detail Modal -->
     <div class="modal-overlay hidden" id="modal-overlay">
         <div class="modal" id="detail-modal">

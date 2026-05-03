@@ -1,14 +1,20 @@
 const cityInput = document.getElementById('city-input');
 const searchBtn = document.getElementById('search-btn');
+const gpsBtn = document.getElementById('gps-btn');
 const suggestionsList = document.getElementById('suggestions-list');
 const errorMessage = document.getElementById('error-message');
+const unitToggle = document.getElementById('unit-toggle');
+
 const weatherContent = document.getElementById('weather-content');
 const initialState = document.getElementById('initial-state');
-const loadingSpinner = document.getElementById('loading-spinner');
-const forecastContainer = document.getElementById('forecast-container');
+const loadingSkeleton = document.getElementById('loading-skeleton');
+
+const hourlyTitle = document.getElementById('hourly-title');
 const hourlyForecastContainer = document.getElementById('hourly-forecast-container');
-const kenBurnsBg = document.getElementById('ken-burns-bg');
-const weatherAnimationsContainer = document.getElementById('weather-animations');
+const forecastContainer = document.getElementById('forecast-container');
+
+const mapLoading = document.getElementById('map-loading');
+const windyMap = document.getElementById('windy-map');
 
 // Modal Elements
 const modalOverlay = document.getElementById('modal-overlay');
@@ -18,70 +24,82 @@ const modalIcon = document.getElementById('modal-icon');
 const modalBody = document.getElementById('modal-body');
 const detailCards = document.querySelectorAll('.detail-card.interactive');
 
+// Background Elements
+const skyBg = document.getElementById('sky-bg');
+const cloudLayer = document.getElementById('cloud-layer');
+const weatherAnimationsContainer = document.getElementById('weather-animations');
+const lightningFlash = document.getElementById('lightning-flash');
+
 // Elements to update
 const cityNameEl = document.getElementById('city-name');
 const currentDateEl = document.getElementById('current-date');
 const weatherIconEl = document.getElementById('weather-icon');
 const tempValueEl = document.getElementById('temp-value');
+const tempUnitEls = document.querySelectorAll('.temp-unit');
 const weatherDescEl = document.getElementById('weather-description');
 const humidityValueEl = document.getElementById('humidity-value');
 const windValueEl = document.getElementById('wind-value');
 const feelsLikeValueEl = document.getElementById('feels-like-value');
 
-// Map variables
-const windyMap = document.getElementById('windy-map');
+// State
+let currentWeatherData = null;
+let currentUnit = localStorage.getItem('weatherUnit') || 'C';
+let currentLat = null;
+let currentLon = null;
+let currentCityName = null;
+let lightningInterval = null;
 
-// Weather Code Mapping & Ultra-Reliable Unsplash Backgrounds
-const unsplashBase = 'https://images.unsplash.com/photo-';
-const unsplashParams = '?q=80&w=1920&auto=format&fit=crop';
+// Initialization
+function init() {
+    unitToggle.textContent = '°' + (currentUnit === 'C' ? 'F' : 'C'); // Toggle shows the OTHER option
+    
+    // Check local storage for last city
+    const lastCity = localStorage.getItem('lastCity');
+    const lastLat = localStorage.getItem('lastLat');
+    const lastLon = localStorage.getItem('lastLon');
 
-const bgMap = {
-    clearDay: unsplashBase + '1601297183305-6df142704ea2' + unsplashParams, // Bright blue sunny sky
-    clearNight: unsplashBase + '1531306728370-e2ebd9d7bb99' + unsplashParams, // Starry night
-    partlyCloudyDay: unsplashBase + '1464822759023-fed622ff2c3b' + unsplashParams, // Sun and fluffy clouds
-    partlyCloudyNight: unsplashBase + '1499951360447-b19be8fe80f5' + unsplashParams, // Moon and clouds
-    cloudy: unsplashBase + '1534088568595-a066f410cbda' + unsplashParams, // Moody overcast
-    fog: unsplashBase + '1485236715568-ddc5ee6ca227' + unsplashParams, // Thick fog
-    smog: unsplashBase + '1520114002246-17b5f106d71b' + unsplashParams, // City smog/haze
-    drizzle: unsplashBase + '1543997387-548dddb582d1' + unsplashParams, // Tip-tip light rain on glass
-    rain: unsplashBase + '1515694346937-94d85e41e6f0' + unsplashParams, // Steady rain
-    heavyRain: unsplashBase + '1519692933481-e162a57d6721' + unsplashParams, // Torrential heavy rain
-    showers: unsplashBase + '1504700610630-ebcba646bb4c' + unsplashParams, // Rain with sun/rainbow
-    snow: unsplashBase + '1491002052546-bf38f186af56' + unsplashParams, // Gentle snow
-    snowStorm: unsplashBase + '1516466723225-926f1a8eec37' + unsplashParams, // Heavy snow storm / blizzard
-    thunderstorm: unsplashBase + '1605727216801-e27ce1d0ce3c' + unsplashParams, // Epic lightning
-    hail: unsplashBase + '1523772721911-ce1d64380b06' + unsplashParams, // Hail / severe ice storm
-    tornado: unsplashBase + '1527482837616-98e94a4ae948' + unsplashParams // Dark ominous supercell / tornado
+    if (lastCity && lastLat && lastLon) {
+        fetchWeatherForCoords(lastLat, lastLon, lastCity);
+    }
+}
+
+// Map styles based on time and weather
+const skyGradients = {
+    clearDay: 'linear-gradient(180deg, #4da0eb 0%, #87ceeb 100%)',
+    clearNight: 'linear-gradient(180deg, #0b1021 0%, #1b2745 100%)',
+    cloudyDay: 'linear-gradient(180deg, #7a8b99 0%, #aab7c4 100%)',
+    cloudyNight: 'linear-gradient(180deg, #121722 0%, #2c3e50 100%)',
+    stormDay: 'linear-gradient(180deg, #2c3e50 0%, #4ca1af 100%)',
+    stormNight: 'linear-gradient(180deg, #0f172a 0%, #1e293b 100%)',
+    sunset: 'linear-gradient(180deg, #2c1b4d 0%, #e96f5e 100%)',
+    sunrise: 'linear-gradient(180deg, #1e3a5f 0%, #ff7e5f 100%)'
 };
 
 const weatherCodes = {
-    0: { desc: 'Sunny', icon: 'fa-sun', color: ['#fbbf24', '#f59e0b'], bg: bgMap.clearDay, bgNight: bgMap.clearNight, type: 'clear' },
-    1: { desc: 'Mostly Sunny', icon: 'fa-cloud-sun', color: ['#fbbf24', '#f59e0b'], bg: bgMap.clearDay, bgNight: bgMap.clearNight, type: 'clear' },
-    2: { desc: 'Partly Cloudy', icon: 'fa-cloud-sun', color: ['#fcd34d', '#94a3b8'], bg: bgMap.partlyCloudyDay, bgNight: bgMap.partlyCloudyNight, type: 'cloud' },
-    3: { desc: 'Cloudy', icon: 'fa-cloud', color: ['#94a3b8', '#64748b'], bg: bgMap.cloudy, type: 'cloud' },
-    45: { desc: 'Fog', icon: 'fa-smog', color: ['#cbd5e1', '#94a3b8'], bg: bgMap.fog, type: 'cloud' },
-    48: { desc: 'Smog / Rime Fog', icon: 'fa-smog', color: ['#94a3b8', '#64748b'], bg: bgMap.smog, type: 'cloud' },
-    51: { desc: 'Tip-Tip Rain (Light)', icon: 'fa-cloud-rain', color: ['#93c5fd', '#3b82f6'], bg: bgMap.drizzle, type: 'rain' },
-    53: { desc: 'Drizzle', icon: 'fa-cloud-rain', color: ['#93c5fd', '#3b82f6'], bg: bgMap.drizzle, type: 'rain' },
-    55: { desc: 'Heavy Drizzle', icon: 'fa-cloud-rain', color: ['#60a5fa', '#2563eb'], bg: bgMap.heavyRain, type: 'rain' },
-    61: { desc: 'Slight Rain', icon: 'fa-cloud-showers-heavy', color: ['#60a5fa', '#3b82f6'], bg: bgMap.rain, type: 'rain' },
-    63: { desc: 'Rain', icon: 'fa-cloud-showers-heavy', color: ['#3b82f6', '#2563eb'], bg: bgMap.rain, type: 'rain' },
-    65: { desc: 'Heavy Rain', icon: 'fa-cloud-showers-heavy', color: ['#2563eb', '#1d4ed8'], bg: bgMap.heavyRain, type: 'rain' },
-    71: { desc: 'Light Snow', icon: 'fa-snowflake', color: ['#e2e8f0', '#cbd5e1'], bg: bgMap.snow, type: 'snow' },
-    73: { desc: 'Snow', icon: 'fa-snowflake', color: ['#f1f5f9', '#e2e8f0'], bg: bgMap.snow, type: 'snow' },
-    75: { desc: 'Snow Storm', icon: 'fa-snowflake', color: ['#ffffff', '#cbd5e1'], bg: bgMap.snowStorm, type: 'snow' },
-    77: { desc: 'Snow Grains', icon: 'fa-snowflake', color: ['#e2e8f0', '#cbd5e1'], bg: bgMap.snow, type: 'snow' },
-    80: { desc: 'Rain with Sun', icon: 'fa-cloud-showers-water', color: ['#60a5fa', '#3b82f6'], bg: bgMap.showers, type: 'rain' },
-    81: { desc: 'Showers', icon: 'fa-cloud-showers-water', color: ['#3b82f6', '#2563eb'], bg: bgMap.showers, type: 'rain' },
-    82: { desc: 'Heavy Showers', icon: 'fa-cloud-showers-water', color: ['#2563eb', '#1e40af'], bg: bgMap.heavyRain, type: 'rain' },
-    95: { desc: 'Thunderstorm', icon: 'fa-bolt', color: ['#c084fc', '#9333ea'], bg: bgMap.thunderstorm, type: 'storm' },
-    96: { desc: 'Hail Storm', icon: 'fa-bolt', color: ['#d8b4fe', '#a855f7'], bg: bgMap.hail, type: 'storm' },
-    99: { desc: 'Tornado / Severe Storm', icon: 'fa-bolt', color: ['#e9d5ff', '#c084fc'], bg: bgMap.tornado, type: 'storm' },
+    0: { desc: 'Sunny', icon: 'fa-sun', type: 'clear' },
+    1: { desc: 'Mostly Sunny', icon: 'fa-cloud-sun', type: 'clear' },
+    2: { desc: 'Partly Cloudy', icon: 'fa-cloud-sun', type: 'cloudy' },
+    3: { desc: 'Cloudy', icon: 'fa-cloud', type: 'cloudy' },
+    45: { desc: 'Fog', icon: 'fa-smog', type: 'fog' },
+    48: { desc: 'Smog', icon: 'fa-smog', type: 'fog' },
+    51: { desc: 'Light Drizzle', icon: 'fa-cloud-rain', type: 'rain' },
+    53: { desc: 'Drizzle', icon: 'fa-cloud-rain', type: 'rain' },
+    55: { desc: 'Heavy Drizzle', icon: 'fa-cloud-rain', type: 'heavyRain' },
+    61: { desc: 'Slight Rain', icon: 'fa-cloud-showers-heavy', type: 'rain' },
+    63: { desc: 'Rain', icon: 'fa-cloud-showers-heavy', type: 'rain' },
+    65: { desc: 'Heavy Rain', icon: 'fa-cloud-showers-heavy', type: 'heavyRain' },
+    71: { desc: 'Light Snow', icon: 'fa-snowflake', type: 'snow' },
+    73: { desc: 'Snow', icon: 'fa-snowflake', type: 'snow' },
+    75: { desc: 'Snow Storm', icon: 'fa-snowflake', type: 'heavySnow' },
+    77: { desc: 'Snow Grains', icon: 'fa-snowflake', type: 'snow' },
+    80: { desc: 'Rain Showers', icon: 'fa-cloud-showers-water', type: 'rain' },
+    81: { desc: 'Heavy Showers', icon: 'fa-cloud-showers-water', type: 'heavyRain' },
+    82: { desc: 'Violent Showers', icon: 'fa-cloud-showers-water', type: 'heavyRain' },
+    95: { desc: 'Thunderstorm', icon: 'fa-bolt', type: 'storm' },
+    96: { desc: 'Thunderstorm & Hail', icon: 'fa-bolt', type: 'storm' },
+    99: { desc: 'Severe Thunderstorm', icon: 'fa-bolt', type: 'storm' },
 };
-
-const defaultWeather = { desc: 'Unknown', icon: 'fa-cloud', color: ['#94a3b8', '#64748b'], bg: bgMap.cloudy, type: 'cloud' };
-
-let currentWeatherData = null;
+const defaultWeather = { desc: 'Unknown', icon: 'fa-cloud', type: 'cloudy' };
 
 // Debounce Utility
 function debounce(func, delay) {
@@ -100,6 +118,7 @@ const handleInput = debounce(async (e) => {
 
     try {
         const response = await fetch(`https://geocoding-api.open-meteo.com/v1/search?name=${encodeURIComponent(query)}&count=5&language=en&format=json`);
+        if (!response.ok) throw new Error('Geocoding API error');
         const data = await response.json();
         if (data.results && data.results.length > 0) { renderSuggestions(data.results); } 
         else { suggestionsList.classList.add('hidden'); }
@@ -117,9 +136,57 @@ const triggerSearch = async () => {
 cityInput.addEventListener('keypress', (e) => { if (e.key === 'Enter') triggerSearch(); });
 searchBtn.addEventListener('click', triggerSearch);
 
+// GPS Button
+gpsBtn.addEventListener('click', () => {
+    if ("geolocation" in navigator) {
+        showLoading();
+        navigator.geolocation.getCurrentPosition(async (position) => {
+            const lat = position.coords.latitude;
+            const lon = position.coords.longitude;
+            
+            try {
+                // Reverse geocode to get city name
+                const response = await fetch(`https://api.bigdatacloud.net/data/reverse-geocode-client?latitude=${lat}&longitude=${lon}&localityLanguage=en`);
+                let cityName = 'Current Location';
+                if(response.ok) {
+                    const data = await response.json();
+                    cityName = data.city || data.locality || data.principalSubdivision || 'Current Location';
+                }
+                fetchWeatherForCoords(lat, lon, cityName);
+            } catch (e) {
+                fetchWeatherForCoords(lat, lon, 'Current Location');
+            }
+        }, (error) => {
+            console.error("Geolocation error:", error);
+            showError();
+        });
+    } else {
+        alert("Geolocation is not supported by your browser");
+    }
+});
+
+// Unit Toggle
+unitToggle.addEventListener('click', () => {
+    currentUnit = currentUnit === 'C' ? 'F' : 'C';
+    unitToggle.textContent = '°' + (currentUnit === 'C' ? 'F' : 'C');
+    localStorage.setItem('weatherUnit', currentUnit);
+    
+    if (currentLat && currentLon && currentCityName) {
+        fetchWeatherForCoords(currentLat, currentLon, currentCityName);
+    }
+});
+
+
 document.addEventListener('click', (e) => {
-    if (!cityInput.contains(e.target) && !searchBtn.contains(e.target) && !suggestionsList.contains(e.target)) {
+    if (!cityInput.contains(e.target) && !searchBtn.contains(e.target) && !gpsBtn.contains(e.target) && !suggestionsList.contains(e.target)) {
         suggestionsList.classList.add('hidden');
+    }
+});
+
+// Escape to close modal
+document.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape' && !modalOverlay.classList.contains('hidden')) {
+        modalOverlay.classList.add('hidden');
     }
 });
 
@@ -143,6 +210,7 @@ async function fetchWeatherForQuery(query) {
     showLoading();
     try {
         const geoResponse = await fetch(`https://geocoding-api.open-meteo.com/v1/search?name=${encodeURIComponent(query)}&count=1&language=en&format=json`);
+        if(!geoResponse.ok) throw new Error('Network response was not ok');
         const geoData = await geoResponse.json();
         if (!geoData.results || geoData.results.length === 0) throw new Error('City not found');
         fetchWeatherForCoords(geoData.results[0].latitude, geoData.results[0].longitude, geoData.results[0].name);
@@ -151,9 +219,22 @@ async function fetchWeatherForQuery(query) {
 
 async function fetchWeatherForCoords(lat, lon, cityName) {
     showLoading();
+    currentLat = lat;
+    currentLon = lon;
+    currentCityName = cityName;
+    
+    // Cache last city
+    localStorage.setItem('lastCity', cityName);
+    localStorage.setItem('lastLat', lat);
+    localStorage.setItem('lastLon', lon);
+
+    const tempUnitParam = currentUnit === 'F' ? '&temperature_unit=fahrenheit' : '';
+    const windUnitParam = currentUnit === 'F' ? '&wind_speed_unit=mph' : '';
+
     try {
-        const url = `https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&current=temperature_2m,relative_humidity_2m,apparent_temperature,is_day,precipitation,weather_code,wind_speed_10m,wind_direction_10m,wind_gusts_10m,surface_pressure&hourly=temperature_2m,weather_code&daily=weather_code,temperature_2m_max,temperature_2m_min&timezone=auto`;
+        const url = `https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&current=temperature_2m,relative_humidity_2m,apparent_temperature,is_day,precipitation,weather_code,wind_speed_10m,wind_direction_10m,wind_gusts_10m,surface_pressure&hourly=temperature_2m,weather_code&daily=weather_code,temperature_2m_max,temperature_2m_min&timezone=auto${tempUnitParam}${windUnitParam}`;
         const weatherResponse = await fetch(url);
+        if(!weatherResponse.ok) throw new Error('Weather API error');
         const weatherData = await weatherResponse.json();
         currentWeatherData = weatherData.current;
         updateUI(cityName, weatherData.current, weatherData.hourly, weatherData.daily, lat, lon);
@@ -161,7 +242,7 @@ async function fetchWeatherForCoords(lat, lon, cityName) {
 }
 
 function updateUI(cityName, current, hourly, daily, lat, lon) {
-    loadingSpinner.classList.add('hidden');
+    loadingSkeleton.classList.add('hidden');
     initialState.classList.add('hidden');
     weatherContent.classList.remove('hidden');
     errorMessage.classList.add('hidden');
@@ -170,8 +251,13 @@ function updateUI(cityName, current, hourly, daily, lat, lon) {
     currentDateEl.textContent = date.toLocaleDateString('en-US', { weekday: 'long', day: 'numeric', month: 'short' });
     cityNameEl.textContent = cityName;
     tempValueEl.textContent = Math.round(current.temperature_2m);
+    
+    // Update unit displays
+    tempUnitEls.forEach(el => el.textContent = `°${currentUnit}`);
+    
     humidityValueEl.textContent = `${current.relative_humidity_2m}%`;
-    windValueEl.textContent = `${Math.round(current.wind_speed_10m)} km/h`;
+    const speedUnit = currentUnit === 'F' ? 'mph' : 'km/h';
+    windValueEl.textContent = `${Math.round(current.wind_speed_10m)} ${speedUnit}`;
     feelsLikeValueEl.textContent = `${Math.round(current.apparent_temperature)}°`;
 
     const isDay = current.is_day;
@@ -183,19 +269,10 @@ function updateUI(cityName, current, hourly, daily, lat, lon) {
 
     weatherDescEl.textContent = codeInfo.desc;
     weatherIconEl.className = `fas ${iconClass} weather-icon-large`;
-    weatherIconEl.style.background = `linear-gradient(135deg, ${codeInfo.color[0]}, ${codeInfo.color[1]})`;
-    weatherIconEl.style.webkitBackgroundClip = 'text';
-    weatherIconEl.style.webkitTextFillColor = 'transparent';
     
-    // Set cinematic background image
-    const bgImage = (!isDay && codeInfo.bgNight) ? codeInfo.bgNight : (codeInfo.bg || defaultWeather.bg);
-    kenBurnsBg.style.backgroundImage = `url('${bgImage}')`;
-    
-    // Gradient fallback matching the weather color
-    document.body.style.background = `linear-gradient(135deg, ${codeInfo.color[0]}, #0f172a)`;
+    // Render dynamic background
+    renderLiveBackground(codeInfo.type, isDay, current.weather_code);
 
-    // Render components
-    
     // Find the closest future hour index for "Today"
     let startIndex = 0;
     const now = new Date();
@@ -207,23 +284,26 @@ function updateUI(cityName, current, hourly, daily, lat, lon) {
         }
     }
     
-    renderHourlyForecast(hourly, startIndex, 'Today');
+    renderHourlyForecast(hourly, startIndex, 'Today', 0);
     renderForecast(daily, hourly);
-    renderWeatherAnimations(codeInfo.type, isDay);
     
     // Setup Interactive Map using Windy iframe embed
     const zoomLevel = 5;
-    const windySrc = `https://embed.windy.com/embed.html?type=map&location=coordinates&metricRain=default&metricTemp=default&metricWind=default&zoom=${zoomLevel}&overlay=clouds&product=ecmwf&level=surface&lat=${lat}&lon=${lon}`;
+    const metricTemp = currentUnit === 'C' ? 'c' : 'f';
+    const metricWind = currentUnit === 'C' ? 'km/h' : 'mph';
+    const metricRain = currentUnit === 'C' ? 'mm' : 'in';
+    const windySrc = `https://embed.windy.com/embed.html?type=map&location=coordinates&metricRain=${metricRain}&metricTemp=${metricTemp}&metricWind=${metricWind}&zoom=${zoomLevel}&overlay=clouds&product=ecmwf&level=surface&lat=${lat}&lon=${lon}`;
+    
+    mapLoading.classList.remove('hidden');
+    windyMap.onload = () => { mapLoading.classList.add('hidden'); };
+    windyMap.onerror = () => { mapLoading.innerHTML = '<span>Map failed to load.</span>'; };
     windyMap.src = windySrc;
 }
 
-function renderHourlyForecast(hourly, startIndex, titleText) {
-    const titleEl = document.querySelector('#hourly-forecast-container').previousElementSibling;
-    titleEl.textContent = titleText;
-    
+function renderHourlyForecast(hourly, startIndex, titleText, dayIndex) {
+    hourlyTitle.textContent = titleText;
     hourlyForecastContainer.innerHTML = '';
     
-    // Render 24 hours from the start index
     for (let i = startIndex; i < startIndex + 24; i++) {
         if (!hourly.time[i]) break;
         
@@ -231,19 +311,24 @@ function renderHourlyForecast(hourly, startIndex, titleText) {
         let hours = dateObj.getHours();
         const ampm = hours >= 12 ? 'PM' : 'AM';
         hours = hours % 12;
-        hours = hours ? hours : 12; // the hour '0' should be '12'
+        hours = hours ? hours : 12; 
         
-        // If it's the very first item and the title is "Today", call it "Now"
-        const timeStr = (i === startIndex && titleText === 'Today') ? 'Now' : `${hours} ${ampm}`;
+        // Fix "Now" logic: only show "Now" if it's actually the current day (dayIndex === 0) AND the first item
+        const timeStr = (i === startIndex && dayIndex === 0) ? 'Now' : `${hours} ${ampm}`;
 
         const codeInfo = weatherCodes[hourly.weather_code[i]] || defaultWeather;
         const temp = Math.round(hourly.temperature_2m[i]);
+        
+        let iconClass = codeInfo.icon;
+        const isNightHour = dateObj.getHours() < 6 || dateObj.getHours() > 19; // Rough day/night for hourly
+        if (isNightHour && iconClass === 'fa-sun') iconClass = 'fa-moon';
+        if (isNightHour && iconClass === 'fa-cloud-sun') iconClass = 'fa-cloud-moon';
 
         const item = document.createElement('div');
         item.className = 'forecast-item';
         item.innerHTML = `
             <div class="forecast-time">${timeStr}</div>
-            <i class="fas ${codeInfo.icon} forecast-icon" style="color: ${codeInfo.color[0]}"></i>
+            <i class="fas ${iconClass} forecast-icon"></i>
             <div class="forecast-temps">
                 <span class="temp-single">${temp}°</span>
             </div>
@@ -272,26 +357,21 @@ function renderForecast(daily, hourly) {
         
         item.innerHTML = `
             <div class="forecast-day">${dayName}</div>
-            <i class="fas ${codeInfo.icon} forecast-icon" style="color: ${codeInfo.color[0]}"></i>
+            <i class="fas ${codeInfo.icon} forecast-icon"></i>
             <div class="forecast-temps">
                 <span class="temp-max">${maxTemp}°</span>
                 <span class="temp-min">${minTemp}°</span>
             </div>
         `;
         
-        // Click listener to expand this specific day in the hourly view
         item.addEventListener('click', () => {
-            // Remove active from all
             document.querySelectorAll('#forecast-container .forecast-item').forEach(el => el.classList.remove('active'));
             item.classList.add('active');
             
-            // Calculate the start index for this day in the hourly array (i * 24)
             const targetStartIndex = i * 24;
             const fullDayName = i === 0 ? 'Today' : dateObj.toLocaleDateString('en-US', { weekday: 'long' });
             
-            renderHourlyForecast(hourly, targetStartIndex, fullDayName);
-            
-            // Scroll hourly container to the left smoothly
+            renderHourlyForecast(hourly, targetStartIndex, fullDayName, i);
             hourlyForecastContainer.scrollTo({ left: 0, behavior: 'smooth' });
         });
         
@@ -299,11 +379,61 @@ function renderForecast(daily, hourly) {
     }
 }
 
-function renderWeatherAnimations(weatherType, isDay) {
-    weatherAnimationsContainer.innerHTML = ''; 
+function renderLiveBackground(type, isDay, code) {
+    // 1. Sky Gradient & Glass Tint
+    if (type === 'clear') {
+        skyBg.style.background = isDay ? skyGradients.clearDay : skyGradients.clearNight;
+        document.documentElement.style.setProperty('--glass-tint', isDay ? 'rgba(255, 200, 100, 0.05)' : 'rgba(50, 100, 255, 0.05)');
+    } else if (type === 'cloudy') {
+        skyBg.style.background = isDay ? skyGradients.cloudyDay : skyGradients.cloudyNight;
+        document.documentElement.style.setProperty('--glass-tint', 'rgba(200, 200, 220, 0.05)');
+    } else if (type === 'rain' || type === 'heavyRain') {
+        skyBg.style.background = isDay ? skyGradients.cloudyDay : skyGradients.stormNight;
+        document.documentElement.style.setProperty('--glass-tint', 'rgba(100, 150, 255, 0.08)');
+    } else if (type === 'storm') {
+        skyBg.style.background = isDay ? skyGradients.stormDay : skyGradients.stormNight;
+        document.documentElement.style.setProperty('--glass-tint', 'rgba(100, 50, 150, 0.05)');
+    } else {
+        skyBg.style.background = skyGradients.cloudyDay;
+    }
 
-    if (!isDay && weatherType === 'clear') {
-        for (let i = 0; i < 50; i++) {
+    // Clear previous
+    cloudLayer.innerHTML = '';
+    weatherAnimationsContainer.innerHTML = '';
+    clearInterval(lightningInterval);
+    lightningFlash.classList.remove('flash');
+
+    // 2. Cloud System
+    let cloudCount = 0;
+    let cloudDurationBase = 60;
+    
+    if (type === 'cloudy' || type === 'fog') { cloudCount = 6; cloudDurationBase = 50; }
+    else if (type === 'rain' || type === 'snow') { cloudCount = 8; cloudDurationBase = 40; }
+    else if (type === 'heavyRain' || type === 'storm' || type === 'heavySnow') { cloudCount = 12; cloudDurationBase = 25; }
+    else if (type === 'clear' && code !== 0) { cloudCount = 3; cloudDurationBase = 90; } // Mostly sunny
+
+    for(let i=0; i<cloudCount; i++) {
+        const cloud = document.createElement('div');
+        cloud.className = 'cloud';
+        
+        // Randomize clouds
+        const width = Math.random() * 300 + 150;
+        cloud.style.width = width + 'px';
+        cloud.style.height = (width * 0.4) + 'px'; // Ellipse like
+        
+        cloud.style.top = (Math.random() * 50 - 10) + 'vh'; // Mostly upper half
+        cloud.style.opacity = Math.random() * 0.4 + 0.1;
+        
+        const duration = cloudDurationBase + (Math.random() * 30);
+        cloud.style.animationDuration = duration + 's';
+        cloud.style.animationDelay = '-' + (Math.random() * duration) + 's'; // Start at different x
+        
+        cloudLayer.appendChild(cloud);
+    }
+
+    // 3. Particles
+    if (!isDay && type === 'clear') {
+        for (let i = 0; i < 60; i++) {
             const star = document.createElement('div');
             star.className = 'star';
             star.style.width = `${Math.random() * 3}px`;
@@ -314,35 +444,68 @@ function renderWeatherAnimations(weatherType, isDay) {
             star.style.animationDelay = `${Math.random() * 2}s`;
             weatherAnimationsContainer.appendChild(star);
         }
-    } else if (weatherType === 'rain' || weatherType === 'storm') {
-        const dropCount = weatherType === 'storm' ? 100 : 50;
+    } 
+    
+    if (type === 'rain' || type === 'heavyRain' || type === 'storm') {
+        const dropCount = (type === 'heavyRain' || type === 'storm') ? 120 : 60;
         for (let i = 0; i < dropCount; i++) {
             const drop = document.createElement('div');
             drop.className = 'rain-drop';
             drop.style.left = `${Math.random() * 120 - 10}vw`;
             drop.style.height = `${Math.random() * 30 + 20}px`;
-            drop.style.animationDuration = `${Math.random() * 0.5 + 0.5}s`;
+            drop.style.animationDuration = `${Math.random() * 0.4 + 0.4}s`;
             drop.style.animationDelay = `${Math.random() * 2}s`;
             weatherAnimationsContainer.appendChild(drop);
         }
-    } else if (weatherType === 'snow') {
-        for (let i = 0; i < 80; i++) {
+    } 
+    
+    if (type === 'snow' || type === 'heavySnow') {
+        const flakeCount = type === 'heavySnow' ? 120 : 60;
+        for (let i = 0; i < flakeCount; i++) {
             const flake = document.createElement('div');
             flake.className = 'snow-flake';
             const size = Math.random() * 5 + 3;
             flake.style.width = `${size}px`;
             flake.style.height = `${size}px`;
-            flake.style.left = `${Math.random() * 100}vw`;
-            flake.style.animationDuration = `${Math.random() * 5 + 5}s`;
+            flake.style.left = `${Math.random() * 120 - 20}vw`;
+            flake.style.animationDuration = `${Math.random() * 5 + 4}s`;
             flake.style.animationDelay = `-${Math.random() * 5}s`;
             weatherAnimationsContainer.appendChild(flake);
         }
+    }
+
+    if (type === 'fog') {
+        for(let i=0; i<3; i++) {
+            const fog = document.createElement('div');
+            fog.className = 'fog-layer';
+            fog.style.animationDuration = (Math.random() * 20 + 30) + 's';
+            fog.style.animationDelay = `-${Math.random() * 20}s`;
+            weatherAnimationsContainer.appendChild(fog);
+        }
+    }
+
+    // 4. Lightning
+    if (type === 'storm') {
+        lightningInterval = setInterval(() => {
+            if(Math.random() > 0.6) { // Chance to strike
+                lightningFlash.classList.add('flash');
+                setTimeout(() => lightningFlash.classList.remove('flash'), 100);
+                // Double flash
+                if(Math.random() > 0.5) {
+                    setTimeout(() => {
+                        lightningFlash.classList.add('flash');
+                        setTimeout(() => lightningFlash.classList.remove('flash'), 50);
+                    }, 150);
+                }
+            }
+        }, 3000);
     }
 }
 
 // Modal Logic
 function openModal(type) {
     if (!currentWeatherData) return;
+    const speedUnit = currentUnit === 'F' ? 'mph' : 'km/h';
 
     if (type === 'humidity') {
         modalIcon.className = 'fas fa-droplet';
@@ -363,11 +526,11 @@ function openModal(type) {
         modalBody.innerHTML = `
             <div class="modal-detail-row">
                 <span class="modal-label">Wind Speed</span>
-                <span class="modal-value">${currentWeatherData.wind_speed_10m} km/h</span>
+                <span class="modal-value">${currentWeatherData.wind_speed_10m} ${speedUnit}</span>
             </div>
             <div class="modal-detail-row">
                 <span class="modal-label">Wind Gusts</span>
-                <span class="modal-value">${currentWeatherData.wind_gusts_10m} km/h</span>
+                <span class="modal-value">${currentWeatherData.wind_gusts_10m} ${speedUnit}</span>
             </div>
             <div class="modal-detail-row">
                 <span class="modal-label">Direction</span>
@@ -380,7 +543,7 @@ function openModal(type) {
         modalBody.innerHTML = `
             <div class="modal-detail-row">
                 <span class="modal-label">Apparent Temp</span>
-                <span class="modal-value">${currentWeatherData.apparent_temperature}°C</span>
+                <span class="modal-value">${currentWeatherData.apparent_temperature}°${currentUnit}</span>
             </div>
             <div class="modal-detail-row">
                 <span class="modal-label">Surface Pressure</span>
@@ -408,13 +571,16 @@ function showLoading() {
     initialState.classList.add('hidden');
     weatherContent.classList.add('hidden');
     errorMessage.classList.add('hidden');
-    loadingSpinner.classList.remove('hidden');
+    loadingSkeleton.classList.remove('hidden');
 }
 
 function showError() {
-    loadingSpinner.classList.add('hidden');
+    loadingSkeleton.classList.add('hidden');
     errorMessage.classList.remove('hidden');
     if (weatherContent.classList.contains('hidden')) {
         initialState.classList.remove('hidden');
     }
 }
+
+// Start
+init();

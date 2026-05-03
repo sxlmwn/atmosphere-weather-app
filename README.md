@@ -19,7 +19,7 @@
 
 ## ✨ Features
 
-- 🌌 **Cinematic 4K Backgrounds:** The background dynamically shifts to stunning Pexels photography with a smooth Ken Burns panning effect depending on the weather (Snow, Rain, Clear, etc.).
+- 🌌 **Live Animated Backgrounds:** Pure CSS & JS driven dynamic skies with moving clouds, rain particles, snow flakes, and interactive lightning flashes that adapt speed to weather intensity.
 - 💧 **Interactive Particles:** Custom CSS animations overlay the backgrounds to simulate falling rain, drifting snow, or twinkling stars.
 - 📱 **iOS Glassmorphism UI:** A sleek, frosted-glass design language inspired by the highest-end mobile operating systems.
 - 🗺️ **Live Interactive Radar Map:** Powered by Windy, watch real-time precipitation and storm clouds move directly on an interactive embedded map.
@@ -45,7 +45,7 @@ Check out the live deployment here: **[Atmosphere Live Demo](https://sxlmwn.gith
 
 - **Weather Data:** [Open-Meteo API](https://open-meteo.com/) (Free, no keys required)
 - **Maps & Radar:** [Windy Embed](https://www.windy.com/)
-- **Photography:** [Pexels](https://www.pexels.com/)
+- **Animations:** Pure CSS/JS (No external images)
 
 <br />
 
