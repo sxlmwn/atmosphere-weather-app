@@ -26,7 +26,7 @@
 * { margin: 0; padding: 0; box-sizing: border-box; -webkit-font-smoothing: antialiased; }
 
 body {
-    font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Helvetica Neue', 'Trebuchet MS', sans-serif;
     color: var(--text-primary);
     min-height: 100vh;
     display: flex;
@@ -58,6 +58,12 @@ body {
     animation: cloudDrift linear infinite;
 }
 @keyframes cloudDrift {
+    0% { transform: translateX(-120%); }
+    50% { transform: translateX(calc(50vw - 60%)); }
+    100% { transform: translateX(calc(100vw + 120%)); }
+}
+
+@keyframes cloudDriftSmooth {
     from { transform: translateX(-120%); }
     to   { transform: translateX(calc(100vw + 120%)); }
 }
@@ -503,6 +509,255 @@ body {
 @keyframes slideUpFade {
     from { opacity: 0; transform: translateY(30px) scale(0.96); }
     to   { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+
+/* ══════════════ ULTRA REALISTIC GLASS ══════════════ */
+@supports (backdrop-filter: blur(1px)) {
+    .app-container {
+        background: rgba(255, 255, 255, 0.05);
+        backdrop-filter: blur(100px) saturate(250%) brightness(1.15) contrast(1.05);
+        -webkit-backdrop-filter: blur(100px) saturate(250%) brightness(1.15) contrast(1.05);
+    }
+    
+    .detail-card {
+        background: rgba(255, 255, 255, 0.04);
+        backdrop-filter: blur(50px) saturate(230%) brightness(1.1);
+        -webkit-backdrop-filter: blur(50px) saturate(230%) brightness(1.1);
+    }
+    
+    .forecast-section {
+        background: rgba(255, 255, 255, 0.04);
+        backdrop-filter: blur(50px) saturate(200%) brightness(1.08);
+        -webkit-backdrop-filter: blur(50px) saturate(200%) brightness(1.08);
+    }
+    
+    .modal {
+        background: rgba(255, 255, 255, 0.07);
+        backdrop-filter: blur(120px) saturate(280%) brightness(1.2) contrast(1.1);
+        -webkit-backdrop-filter: blur(120px) saturate(280%) brightness(1.2) contrast(1.1);
+    }
+    
+    .suggestions-list {
+        backdrop-filter: blur(100px) saturate(250%);
+        -webkit-backdrop-filter: blur(100px) saturate(250%);
+    }
+}
+
+/* Enhanced glass borders */
+.app-container {
+    border: 1.5px solid rgba(255, 255, 255, 0.18);
+    border-top: 1.5px solid rgba(255, 255, 255, 0.35);
+    border-left: 1.5px solid rgba(255, 255, 255, 0.30);
+    box-shadow:
+        inset 0 1px 2px rgba(255,255,255,0.20),
+        inset 0 0 80px rgba(255,255,255,0.08),
+        0 8px 32px rgba(0, 0, 0, 0.45),
+        0 2px 8px rgba(0, 0, 0, 0.25),
+        0 0 60px rgba(100, 150, 255, 0.12);
+}
+
+.detail-card {
+    border: 1px solid rgba(255, 255, 255, 0.16);
+    border-top: 1px solid rgba(255, 255, 255, 0.28);
+    border-left: 1px solid rgba(255, 255, 255, 0.24);
+}
+
+/* Smooth float animation */
+@keyframes floatSmooth {
+    0%, 100% { transform: translateY(0px); }
+    50%      { transform: translateY(-15px); }
+}
+
+.weather-icon-large {
+    animation: floatSmooth 8s ease-in-out infinite;
+}
+
+
+
+/* ══════════════ RAIN INTENSITY LEVELS ══════════════ */
+
+/* Light rain */
+.rain-drop.light {
+    height: 15px !important;
+    opacity: 0.4 !important;
+    animation-duration: 1.2s !important;
+}
+
+/* Medium rain */
+.rain-drop.medium {
+    height: 25px !important;
+    opacity: 0.6 !important;
+    animation-duration: 0.8s !important;
+}
+
+/* Heavy rain */
+.rain-drop.heavy {
+    height: 35px !important;
+    opacity: 0.8 !important;
+    animation-duration: 0.6s !important;
+}
+
+/* Very heavy rain */
+.rain-drop.vheavy {
+    height: 45px !important;
+    opacity: 0.95 !important;
+    animation-duration: 0.45s !important;
+}
+
+/* Rain with wind effect */
+@keyframes rainWithWind {
+    0%   { transform: translateY(-100px) translateX(-30px) rotate(25deg); opacity: 0; }
+    10%  { opacity: 1; }
+    90%  { opacity: 1; }
+    100% { transform: translateY(100vh) translateX(30px) rotate(25deg); opacity: 0; }
+}
+
+.rain-drop.windyRain {
+    animation: rainWithWind linear infinite !important;
+}
+
+
+/* ══════════════ DYNAMIC WALLPAPERS (4K Simulated) ══════════════ */
+
+/* Clear Day - Blue Sky */
+.sky-bg.clearDay {
+    background: linear-gradient(180deg, 
+        #87CEEB 0%,
+        #E0F6FF 40%,
+        #FFE4B5 80%,
+        #FFD700 100%);
+    animation: sunriseSunset 0.5s ease-in;
+}
+
+/* Clear Night - Deep Space */
+.sky-bg.clearNight {
+    background: radial-gradient(ellipse at 20% 30%, rgba(100,150,255,0.3) 0%, transparent 40%),
+                linear-gradient(180deg, 
+                    #0a1929 0%,
+                    #1a2849 50%,
+                    #2d1b4e 100%);
+    animation: nightGlow 0.5s ease-in;
+}
+
+/* Cloudy Day - Overcast */
+.sky-bg.cloudyDay {
+    background: linear-gradient(180deg,
+        #b0c4de 0%,
+        #d3d3d3 40%,
+        #e8e8e8 70%,
+        #f0f0f0 100%);
+    animation: cloudyShift 0.5s ease-in;
+}
+
+/* Cloudy Night - Dark Overcast */
+.sky-bg.cloudyNight {
+    background: linear-gradient(180deg,
+        #2c3e50 0%,
+        #34495e 50%,
+        #1a1a2e 100%);
+}
+
+/* Rain Day - Wet Atmosphere */
+.sky-bg.rainDay {
+    background: linear-gradient(180deg,
+        #7a8b99 0%,
+        #8da1ac 30%,
+        #9db3c6 60%,
+        #aab7c4 100%);
+    animation: rainBrighten 0.5s ease-in;
+}
+
+/* Storm - Dark & Ominous */
+.sky-bg.storm {
+    background: linear-gradient(180deg,
+        #1a2332 0%,
+        #2d3f52 40%,
+        #3d4a5c 70%,
+        #2c3e50 100%);
+    animation: stormPulse 2s ease-in-out infinite;
+}
+
+/* Sunset - Golden Hour */
+.sky-bg.sunset {
+    background: linear-gradient(180deg,
+        #ff6b6b 0%,
+        #ff8c42 25%,
+        #ffa500 50%,
+        #ffe5b4 100%);
+    animation: sunsetGlow 0.8s ease-in;
+}
+
+/* Sunrise - Dawn Colors */
+.sky-bg.sunrise {
+    background: linear-gradient(180deg,
+        #1e1b4b 0%,
+        #3f2f7f 25%,
+        #ff7f50 50%,
+        #ffa07a 100%);
+}
+
+/* Snow - Light & Bright */
+.sky-bg.snow {
+    background: linear-gradient(180deg,
+        #e0e7ff 0%,
+        #f0f4ff 40%,
+        #ffffff 100%);
+    animation: snowBright 0.5s ease-in;
+}
+
+/* Fog - Misty */
+.sky-bg.fog {
+    background: linear-gradient(180deg,
+        #c8d0d8 0%,
+        #d8dfe6 50%,
+        #e8eef5 100%);
+}
+
+/* Animations for wallpaper transitions */
+@keyframes sunriseSunset {
+    from { opacity: 0.8; }
+    to { opacity: 1; }
+}
+
+@keyframes nightGlow {
+    from { filter: brightness(0.9); }
+    to { filter: brightness(1); }
+}
+
+@keyframes cloudyShift {
+    from { filter: saturate(0.9); }
+    to { filter: saturate(1); }
+}
+
+@keyframes rainBrighten {
+    from { filter: brightness(0.95) saturate(0.9); }
+    to { filter: brightness(1) saturate(1); }
+}
+
+@keyframes stormPulse {
+    0%, 100% { filter: brightness(0.95); }
+    50% { filter: brightness(1); }
+}
+
+@keyframes sunsetGlow {
+    from { filter: saturate(0.8) brightness(0.95); }
+    to { filter: saturate(1) brightness(1); }
+}
+
+@keyframes snowBright {
+    from { filter: brightness(0.98); }
+    to { filter: brightness(1.05); }
+}
+
+/* Overlay effects for rain/snow intensity */
+.weather-animations::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    z-index: -1;
+    background: linear-gradient(rgba(200,200,220,0), rgba(100,120,140,0.1));
+    pointer-events: none;
 }
 
 /* ══════════════ RESPONSIVE ══════════════ */

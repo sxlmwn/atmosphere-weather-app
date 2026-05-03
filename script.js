@@ -132,6 +132,16 @@ const weatherCodes = {
     96: { desc: 'Thunderstorm & Hail', icon: 'fa-bolt', type: 'storm' },
     99: { desc: 'Severe Thunderstorm', icon: 'fa-bolt', type: 'storm' },
 };
+
+// Get rain intensity based on precipitation amount
+function getRainIntensity(precipitation) {
+    if (precipitation === undefined || precipitation === null) return 'medium';
+    if (precipitation < 1) return 'light';
+    if (precipitation < 5) return 'medium';
+    if (precipitation < 15) return 'heavy';
+    return 'vheavy';
+}
+
 const defaultWeather = { desc: 'Unknown', icon: 'fa-cloud', type: 'cloudy' };
 
 // Debounce Utility
@@ -443,17 +453,22 @@ function renderForecast(daily, hourly) {
 }
 
 function renderLiveBackground(type, isDay, code) {
-    // 1. Sky Gradient & Glass Tint
+    // 1. Sky Gradient & Glass Tint with Wallpaper Classes
+    let wallpaperClass = '';
     if (type === 'clear') {
+        wallpaperClass = isDay ? 'clearDay' : 'clearNight';
         skyBg.style.background = isDay ? skyGradients.clearDay : skyGradients.clearNight;
         document.documentElement.style.setProperty('--glass-tint', isDay ? 'rgba(255, 200, 100, 0.05)' : 'rgba(50, 100, 255, 0.05)');
     } else if (type === 'cloudy') {
+        wallpaperClass = isDay ? 'cloudyDay' : 'cloudyNight';
         skyBg.style.background = isDay ? skyGradients.cloudyDay : skyGradients.cloudyNight;
         document.documentElement.style.setProperty('--glass-tint', 'rgba(200, 200, 220, 0.05)');
     } else if (type === 'rain' || type === 'heavyRain') {
+        wallpaperClass = isDay ? 'rainDay' : 'stormNight';
         skyBg.style.background = isDay ? skyGradients.cloudyDay : skyGradients.stormNight;
         document.documentElement.style.setProperty('--glass-tint', 'rgba(100, 150, 255, 0.08)');
     } else if (type === 'storm') {
+        wallpaperClass = 'storm';
         skyBg.style.background = isDay ? skyGradients.stormDay : skyGradients.stormNight;
         document.documentElement.style.setProperty('--glass-tint', 'rgba(100, 50, 150, 0.05)');
     } else {
@@ -490,7 +505,7 @@ function renderLiveBackground(type, isDay, code) {
         cloud.style.top = (Math.random() * 50 - 10) + 'vh'; // Mostly upper half
         cloud.style.opacity = Math.random() * 0.4 + 0.1;
         
-        const duration = cloudDurationBase + (Math.random() * 30);
+        const duration = cloudDurationBase + (Math.random() * 20); // More consistent speed
         cloud.style.animationDuration = duration + 's';
         cloud.style.animationDelay = '-' + (Math.random() * duration) + 's'; // Start at different x
         
@@ -513,19 +528,28 @@ function renderLiveBackground(type, isDay, code) {
     } 
     
     if (type === 'rain' || type === 'heavyRain' || type === 'storm') {
-        const dropCount = (type === 'heavyRain' || type === 'storm') ? 120 : 60;
+        const rainIntensity = getRainIntensity(currentWeatherData?.precipitation);
+        let dropCount = 60;
+        let intensityClass = 'medium';
+        
+        if (rainIntensity === 'light') { dropCount = 30; intensityClass = 'light'; }
+        else if (rainIntensity === 'medium') { dropCount = 60; intensityClass = 'medium'; }
+        else if (rainIntensity === 'heavy') { dropCount = 90; intensityClass = 'heavy'; }
+        else if (rainIntensity === 'vheavy') { dropCount = 150; intensityClass = 'vheavy'; }
+        
+        const hasWind = currentWeatherData?.wind_speed_10m > 15;
+        
         for (let i = 0; i < dropCount; i++) {
             const drop = document.createElement('div');
-            drop.className = 'rain-drop';
+            drop.className = `rain-drop ${intensityClass}${hasWind ? ' windyRain' : ''}`;
             drop.style.left = `${Math.random() * 120 - 10}vw`;
-            drop.style.height = `${Math.random() * 30 + 20}px`;
-            drop.style.animationDuration = `${Math.random() * 0.4 + 0.4}s`;
             drop.style.animationDelay = `${Math.random() * 2}s`;
             weatherAnimationsContainer.appendChild(drop);
         }
     } 
     
     if (type === 'snow' || type === 'heavySnow') {
+        if (!wallpaperClass) wallpaperClass = 'snow';
         const flakeCount = type === 'heavySnow' ? 120 : 60;
         for (let i = 0; i < flakeCount; i++) {
             const flake = document.createElement('div');
@@ -541,6 +565,7 @@ function renderLiveBackground(type, isDay, code) {
     }
 
     if (type === 'fog') {
+        if (!wallpaperClass) wallpaperClass = 'fog';
         for(let i=0; i<3; i++) {
             const fog = document.createElement('div');
             fog.className = 'fog-layer';
@@ -551,6 +576,11 @@ function renderLiveBackground(type, isDay, code) {
     }
 
     // 4. Lightning
+    // Apply wallpaper class
+    if (wallpaperClass) {
+        skyBg.className = `sky-bg ${wallpaperClass}`;
+    }
+    
     if (type === 'storm') {
         lightningInterval = setInterval(() => {
             if(Math.random() > 0.6) { // Chance to strike
@@ -644,7 +674,7 @@ function openModal(type) {
         let atmosphereHTML = `
             <div class="modal-detail-row">
                 <span class="modal-label">Apparent Temp</span>
-                <span class="modal-value">${currentWeatherData.apparent_temperature}°${currentUnit}</span>
+                <span class="modal-value">${Math.round(currentWeatherData.apparent_temperature)}°${currentUnit}</span>
             </div>
             <div class="modal-detail-row">
                 <span class="modal-label">Surface Pressure</span>
