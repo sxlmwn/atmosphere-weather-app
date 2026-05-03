@@ -911,3 +911,114 @@ body {
 #city-name { text-shadow: 0 2px 8px rgba(0,0,0,0.35); }
 .weather-icon-large { filter: drop-shadow(0 4px 12px rgba(0,0,0,0.4)); }
 
+
+/* ══════════════ POLISH & FINISHING TOUCHES ══════════════ */
+
+/* Ultra smooth transitions everywhere */
+* {
+    transition-timing-function: cubic-bezier(0.4, 0.0, 0.2, 1);
+}
+
+/* Glass refraction effect on hover */
+.detail-card.interactive:hover::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    border-radius: var(--radius-card);
+    background: linear-gradient(45deg, 
+        rgba(255,255,255,0.1) 0%,
+        rgba(255,255,255,0) 50%,
+        rgba(255,255,255,0.1) 100%);
+    animation: shimmer 3s ease-in-out infinite;
+    pointer-events: none;
+}
+
+@keyframes shimmer {
+    0% { transform: translateX(-100%); }
+    100% { transform: translateX(100%); }
+}
+
+/* Enhanced forecast item glass */
+.forecast-item.active {
+    background: rgba(255,255,255,0.12);
+    box-shadow: 
+        inset 0 1px 2px rgba(255,255,255,0.25),
+        inset 0 0 30px rgba(255,255,255,0.08),
+        0 8px 24px rgba(0,0,0,0.2),
+        0 0 30px rgba(100, 150, 255,0.08);
+    border: 1px solid rgba(255,255,255,0.25);
+}
+
+/* Smooth scroll behavior */
+html {
+    scroll-behavior: smooth;
+}
+
+/* Glass input field enhancement */
+#city-input::selection {
+    background: rgba(100, 150, 255, 0.4);
+    color: white;
+}
+
+/* Better button hover states */
+.header-icon-btn:active {
+    transform: scale(0.95);
+}
+
+.unit-toggle:active {
+    transform: scale(0.98);
+}
+
+/* Smooth shadow on card interaction */
+.detail-card:active {
+    box-shadow: 
+        inset 0 2px 4px rgba(255,255,255,0.15),
+        0 4px 12px rgba(0,0,0,0.2);
+}
+
+/* Ultra smooth animation for weather icon */
+.weather-icon-large {
+    filter: drop-shadow(0 6px 16px rgba(0,0,0,0.35));
+    transition: filter 0.3s ease;
+}
+
+/* Enhance skeleton loading */
+.skeleton-block {
+    background: rgba(255,255,255,0.08);
+    border: 1px solid rgba(255,255,255,0.12);
+}
+
+/* Smooth modal appearance */
+.modal-overlay:not(.hidden) {
+    animation: fadeIn 0.3s ease-out;
+}
+
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+        backdrop-filter: blur(0px);
+    }
+    to {
+        opacity: 1;
+        backdrop-filter: blur(12px);
+    }
+}
+
+/* Ultra premium text rendering */
+body, button, input {
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    text-rendering: optimizeLegibility;
+}
+
+/* Smooth date transitions */
+#current-date {
+    animation: fadeIn 0.5s ease;
+}
+
+/* Better link focus states */
+button:focus-visible {
+    outline: 2px solid rgba(255,255,255,0.4);
+    outline-offset: 2px;
+}
+
