@@ -43,11 +43,44 @@ const feelsLikeValueEl = document.getElementById('feels-like-value');
 
 // State
 let currentWeatherData = null;
+let currentAQIData = null;
+let currentUVData = null;
 let currentUnit = localStorage.getItem('weatherUnit') || 'C';
 let currentLat = null;
 let currentLon = null;
 let currentCityName = null;
 let lightningInterval = null;
+
+
+// Enhanced event listener cleanup
+let activeEventListeners = [];
+
+function removeAllEventListeners() {
+    activeEventListeners.forEach(({element, event, handler}) => {
+        element.removeEventListener(event, handler);
+    });
+    activeEventListeners = [];
+}
+
+function addTrackedEventListener(element, event, handler) {
+    element.addEventListener(event, handler);
+    activeEventListeners.push({element, event, handler});
+}
+
+// Better geolocation error handling
+const geolocationErrors = {
+    1: 'Permission denied. Please enable location services.',
+    2: 'Position unavailable. Please try again.',
+    3: 'Request timeout. Please try again.',
+};
+
+function handleGeolocationError(error) {
+    const message = geolocationErrors[error.code] || 'Geolocation error occurred.';
+    errorMessage.textContent = message;
+    errorMessage.classList.remove('hidden');
+    loadingSkeleton.classList.add('hidden');
+    console.error('Geolocation error:', error);
+}
 
 // Initialization
 function init() {
@@ -140,28 +173,30 @@ searchBtn.addEventListener('click', triggerSearch);
 gpsBtn.addEventListener('click', () => {
     if ("geolocation" in navigator) {
         showLoading();
-        navigator.geolocation.getCurrentPosition(async (position) => {
-            const lat = position.coords.latitude;
-            const lon = position.coords.longitude;
-            
-            try {
-                // Reverse geocode to get city name
-                const response = await fetch(`https://api.bigdatacloud.net/data/reverse-geocode-client?latitude=${lat}&longitude=${lon}&localityLanguage=en`);
-                let cityName = 'Current Location';
-                if(response.ok) {
-                    const data = await response.json();
-                    cityName = data.city || data.locality || data.principalSubdivision || 'Current Location';
+        navigator.geolocation.getCurrentPosition(
+            async (position) => {
+                const lat = position.coords.latitude;
+                const lon = position.coords.longitude;
+                
+                try {
+                    // Reverse geocode to get city name
+                    const response = await fetch(`https://api.bigdatacloud.net/data/reverse-geocode-client?latitude=${lat}&longitude=${lon}&localityLanguage=en`);
+                    let cityName = 'Current Location';
+                    if(response.ok) {
+                        const data = await response.json();
+                        cityName = data.city || data.locality || data.principalSubdivision || 'Current Location';
+                    }
+                    fetchWeatherForCoords(lat, lon, cityName);
+                } catch (e) {
+                    fetchWeatherForCoords(lat, lon, 'Current Location');
                 }
-                fetchWeatherForCoords(lat, lon, cityName);
-            } catch (e) {
-                fetchWeatherForCoords(lat, lon, 'Current Location');
-            }
-        }, (error) => {
-            console.error("Geolocation error:", error);
-            showError();
-        });
+            },
+            handleGeolocationError,
+            { timeout: 10000, enableHighAccuracy: false }
+        );
     } else {
-        alert("Geolocation is not supported by your browser");
+        errorMessage.textContent = 'Geolocation is not supported by your browser';
+        errorMessage.classList.remove('hidden');
     }
 });
 
@@ -232,13 +267,49 @@ async function fetchWeatherForCoords(lat, lon, cityName) {
     const windUnitParam = currentUnit === 'F' ? '&wind_speed_unit=mph' : '';
 
     try {
-        const url = `https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&current=temperature_2m,relative_humidity_2m,apparent_temperature,is_day,precipitation,weather_code,wind_speed_10m,wind_direction_10m,wind_gusts_10m,surface_pressure&hourly=temperature_2m,weather_code&daily=weather_code,temperature_2m_max,temperature_2m_min&timezone=auto${tempUnitParam}${windUnitParam}`;
+        const url = `https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&current=temperature_2m,relative_humidity_2m,apparent_temperature,is_day,precipitation,weather_code,wind_speed_10m,wind_direction_10m,wind_gusts_10m,surface_pressure&hourly=temperature_2m,weather_code&daily=weather_code,temperature_2m_max,temperature_2m_min,uv_index_max&timezone=auto${tempUnitParam}${windUnitParam}`;
         const weatherResponse = await fetch(url);
         if(!weatherResponse.ok) throw new Error('Weather API error');
         const weatherData = await weatherResponse.json();
         currentWeatherData = weatherData.current;
+        // Fetch AQI data in parallel
+        await fetchAQIData(lat, lon);
         updateUI(cityName, weatherData.current, weatherData.hourly, weatherData.daily, lat, lon);
     } catch (error) { showError(); }
+}
+
+
+// Fetch AQI data (Air Quality Index)
+async function fetchAQIData(lat, lon) {
+    try {
+        const response = await fetch(`https://air-quality-api.open-meteo.com/v1/air-quality?latitude=${lat}&longitude=${lon}&current=us_aqi,european_aqi,pm2_5,pm10_0&timezone=auto`);
+        if (response.ok) {
+            currentAQIData = await response.json();
+            return currentAQIData;
+        }
+    } catch (error) {
+        console.error('AQI fetch error:', error);
+    }
+    return null;
+}
+
+// Get AQI category
+function getAQICategory(aqi) {
+    if (aqi <= 50) return { label: 'Good', color: '#4CAF50' };
+    if (aqi <= 100) return { label: 'Moderate', color: '#FFC107' };
+    if (aqi <= 150) return { label: 'Unhealthy for Sensitive Groups', color: '#FF9800' };
+    if (aqi <= 200) return { label: 'Unhealthy', color: '#F44336' };
+    if (aqi <= 300) return { label: 'Very Unhealthy', color: '#9C27B0' };
+    return { label: 'Hazardous', color: '#4B0082' };
+}
+
+// Get UV Index category
+function getUVCategory(uvIndex) {
+    if (uvIndex < 3) return { label: 'Low', emoji: '🟢' };
+    if (uvIndex < 6) return { label: 'Moderate', emoji: '🟡' };
+    if (uvIndex < 8) return { label: 'High', emoji: '🟠' };
+    if (uvIndex < 11) return { label: 'Very High', emoji: '🔴' };
+    return { label: 'Extreme', emoji: '🟣' };
 }
 
 function updateUI(cityName, current, hourly, daily, lat, lon) {
@@ -257,7 +328,7 @@ function updateUI(cityName, current, hourly, daily, lat, lon) {
     
     humidityValueEl.textContent = `${current.relative_humidity_2m}%`;
     const speedUnit = currentUnit === 'F' ? 'mph' : 'km/h';
-    windValueEl.textContent = `${Math.round(current.wind_speed_10m)} ${speedUnit}`;
+    windValueEl.textContent = `${Math.round(current.wind_speed_10m * 10) / 10} ${speedUnit}`;
     feelsLikeValueEl.textContent = `${Math.round(current.apparent_temperature)}°`;
 
     const isDay = current.is_day;
@@ -397,10 +468,13 @@ function renderLiveBackground(type, isDay, code) {
         skyBg.style.background = skyGradients.cloudyDay;
     }
 
-    // Clear previous
+    // Clear previous - memory leak fix
     cloudLayer.innerHTML = '';
     weatherAnimationsContainer.innerHTML = '';
-    clearInterval(lightningInterval);
+    if (lightningInterval) {
+        clearInterval(lightningInterval);
+        lightningInterval = null;
+    }
     lightningFlash.classList.remove('flash');
 
     // 2. Cloud System
@@ -562,9 +636,20 @@ detailCards.forEach(card => {
     });
 });
 
-modalCloseBtn.addEventListener('click', () => modalOverlay.classList.add('hidden'));
+function closeModal() {
+    modalOverlay.classList.add('hidden');
+}
+
+modalCloseBtn.addEventListener('click', closeModal);
 modalOverlay.addEventListener('click', (e) => {
-    if (e.target === modalOverlay) modalOverlay.classList.add('hidden');
+    if (e.target === modalOverlay) closeModal();
+});
+
+// Additional keyboard support for modal
+addTrackedEventListener(document, 'keydown', (e) => {
+    if (e.key === 'Escape' && !modalOverlay.classList.contains('hidden')) {
+        closeModal();
+    }
 });
 
 function showLoading() {
